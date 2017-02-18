@@ -35,7 +35,7 @@ import gnomemusic.utils as utils
 class ArtistAlbumWidget(Gtk.Box):
 
     __gsignals__ = {
-        'tracks-loaded': (GObject.SignalFlags.RUN_FIRST, None, ()),
+        'songs-loaded': (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __repr__(self):
@@ -64,7 +64,7 @@ class ArtistAlbumWidget(Gtk.Box):
         self._selection_mode_allowed = selection_mode_allowed
         self._selection_toolbar = selection_toolbar
         self.songs = []
-        self._tracks = []
+        self._songs = []
 
         self._header_bar._select_button.connect(
             'toggled', self._on_header_select_button_toggled)
@@ -94,14 +94,14 @@ class ArtistAlbumWidget(Gtk.Box):
         grilo.populate_album_songs(self._media, self._add_item)
 
 
-    def create_disc_box(self, disc_nr, disc_tracks):
+    def create_disc_box(self, disc_nr, disc_songs):
         disc_box = DiscBox(self._model)
-        disc_box.set_tracks(disc_tracks)
+        disc_box.set_songs(disc_songs)
         disc_box.set_disc_number(disc_nr)
         disc_box.set_columns(2)
         disc_box.show_duration(False)
         disc_box.show_favorites(False)
-        disc_box.connect('track-activated', self._track_activated)
+        disc_box.connect('song-activated', self._song_activated)
         disc_box.connect('selection-toggle', self._selection_mode_toggled)
 
         return disc_box
@@ -135,18 +135,18 @@ class ArtistAlbumWidget(Gtk.Box):
                 self._player.actionbar.set_visible(True)
 
     @log
-    def _add_item(self, source, prefs, track, remaining, data=None):
-        if track:
-            self._tracks.append(track)
+    def _add_item(self, source, prefs, song, remaining, data=None):
+        if song:
+            self._songs.append(song)
             return
 
         discs = {}
-        for track in self._tracks:
-            disc_nr = track.get_album_disc_number()
+        for song in self._songs:
+            disc_nr = song.get_album_disc_number()
             if disc_nr not in discs.keys():
-                discs[disc_nr] = [track]
+                discs[disc_nr] = [song]
             else:
-                discs[disc_nr].append(track)
+                discs[disc_nr].append(song)
 
         for disc_nr in discs:
             disc = self.create_disc_box(disc_nr, discs[disc_nr])
@@ -155,7 +155,7 @@ class ArtistAlbumWidget(Gtk.Box):
                 disc.show_disc_label(False)
 
         if remaining == 0:
-            self.emit("tracks-loaded")
+            self.emit("songs-loaded")
 
     @log
     def _update_album_art(self):
@@ -167,7 +167,7 @@ class ArtistAlbumWidget(Gtk.Box):
         self.cover.set_from_surface(surface)
 
     @log
-    def _track_activated(self, widget, song_widget):
+    def _song_activated(self, widget, song_widget):
         if (not song_widget.can_be_played
                 or self._selection_mode):
             return
